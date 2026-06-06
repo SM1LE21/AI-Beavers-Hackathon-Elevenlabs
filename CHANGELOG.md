@@ -8,6 +8,10 @@ Bullets are concrete and compact — no narration.
 
 ---
 
+## 2026-06-06 15:05 — Bent tossing-arm error detection
+- Added a trajectory-based toss-arm fault detector (`TossArmFault.swift`): flags an elbow-angle dip during the upward lift, with 2D-projection guards (flexion_rel, foreshortening, negative-slope gate).
+- Merged the verdict into every emitted serve's feedback in `ServeSessionProcessor`; chose this error class in ADR 0001 and resolved the open question.
+
 ## 2026-06-06 13:05 — Gate pose processing to active session
 - MLKit pose inference and skeleton render now run only while detecting; the idle camera preview no longer processes frames.
 
