@@ -1,10 +1,14 @@
 import SwiftUI
+import UIKit
 
 struct ContentView: View {
     @StateObject private var viewModel = ServeDetectionViewModel()
 
     private let accent = Color(red: 0.0, green: 0.84, blue: 0.58)
     private let warning = Color(red: 1.0, green: 0.49, blue: 0.42)
+
+    @State private var serveFlash = false
+    @State private var flashToken = 0
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -23,11 +27,30 @@ struct ContentView: View {
             .padding(.horizontal, 16)
             .padding(.top, 6)
             .padding(.bottom, 16)
+
+            if serveFlash {
+                serveBanner
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .padding(.top, 72)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black)
         .onAppear { viewModel.onAppear() }
         .onDisappear { viewModel.onDisappear() }
+        .onChange(of: viewModel.serveCount) { newCount in
+            guard newCount > 0 else { return }
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            flashToken += 1
+            let token = flashToken
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) { serveFlash = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+                if token == flashToken {
+                    withAnimation(.easeOut(duration: 0.4)) { serveFlash = false }
+                }
+            }
+        }
     }
 
     private var topBar: some View {
@@ -81,6 +104,16 @@ struct ContentView: View {
             .disabled(viewModel.isTransitioning)
             .opacity(viewModel.isTransitioning ? 0.6 : 1.0)
         }
+    }
+
+    private var serveBanner: some View {
+        Text("Serve \(viewModel.serveCount) detected")
+            .font(.system(size: 16, weight: .bold, design: .rounded))
+            .foregroundStyle(.black)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 12)
+            .background(accent, in: Capsule())
+            .shadow(color: .black.opacity(0.28), radius: 12, y: 4)
     }
 
     private func toggleDetection() {

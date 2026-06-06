@@ -2,6 +2,7 @@
 - 2026-06-06 — AI Beavers Hackathon, 8h build. First milestone: open app → start detecting → detect/count tennis serves on device.
 
 ## Recent changes
+- 2026-06-06 — Full-screen via UILaunchScreen (no more letterbox bars); restored title + count pill; added a serve-detected banner and success haptic.
 - 2026-06-06 — Decluttered the detection HUD: camera-forward layout with a floating count pill, light material chips, slim status line and Start/Stop button. Palette and skeleton overlay unchanged.
 - 2026-06-06 — Minimal native Swift app scaffolded with local serve-detection source, Google ML Kit pose runtime, live camera preview, skeleton overlay, and start/stop serve counting UI. No private Founta pods.
 - 2026-06-06 — Repo initialized with standard agent conventions (AGENTS.md, CLAUDE.md, .gitignore, README.md, CHANGELOG.md, .vault/).
