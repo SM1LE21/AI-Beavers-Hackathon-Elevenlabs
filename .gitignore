@@ -15,3 +15,10 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Xcode / CocoaPods
+*.xcodeproj/
+*.xcworkspace/
+Pods/
+DerivedData/
+xcuserdata/

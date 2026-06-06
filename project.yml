@@ -1,0 +1,63 @@
+name: AiBeaversServeDetect
+
+options:
+  bundleIdPrefix: app.aibeavers
+  deploymentTarget:
+    iOS: "16.0"
+  developmentLanguage: en
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+    ENABLE_BITCODE: NO
+    CLANG_ENABLE_MODULES: YES
+    DEVELOPMENT_TEAM: ""
+  configs:
+    Debug:
+      SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+    Release:
+      SWIFT_OPTIMIZATION_LEVEL: "-O"
+
+targets:
+  AiBeaversServeDetect:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: AiBeaversServeDetect
+        excludes:
+          - "**/.DS_Store"
+    info:
+      path: AiBeaversServeDetect/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: Serve Detect
+        CFBundleName: $(PRODUCT_NAME)
+        CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+        CFBundlePackageType: APPL
+        CFBundleDevelopmentRegion: $(DEVELOPMENT_LANGUAGE)
+        CFBundleExecutable: $(EXECUTABLE_NAME)
+        CFBundleInfoDictionaryVersion: "6.0"
+        CFBundleSignature: "????"
+        LSRequiresIPhoneOS: true
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UIApplicationSupportsIndirectInputEvents: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+        NSCameraUsageDescription: "Serve Detect uses the camera to track your pose and detect tennis serves on device."
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.aibeavers.servedetect
+        PRODUCT_NAME: AiBeaversServeDetect
+        TARGETED_DEVICE_FAMILY: "1,2"
+        OTHER_LDFLAGS: $(inherited) -ObjC
+        ENABLE_PREVIEWS: YES
