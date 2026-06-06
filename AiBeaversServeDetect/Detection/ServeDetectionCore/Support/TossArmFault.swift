@@ -1,30 +1,29 @@
 import CoreGraphics
 import Foundation
 
-// Defaults; calibrate θ_min + flexion_rel on real straight-vs-bent toss clips.
+// Defaults; calibrate straightReference + minDip on real straight-vs-bent toss clips (read the logged dip per serve).
 private enum TossArmTuning {
-    static let lookbackSeconds = 2.0
+    static let preTrophySeconds = 2.0
+    static let postTrophySeconds = 1.0          // trophy anchors on the straight instant; the bend develops just after
     static let minVisibility = 0.5
-    static let foreshortenMinRatio = 0.7      // drop frames whose arm projects < 70% of this serve's typical span
-    static let smoothingWindow = 3            // median-of-3 keeps a 2-3 frame bend at ~10 FPS
-    static let enterBendDegrees = 160.0
-    static let exitBendDegrees = 165.0
-    static let minBendDurationSeconds = 0.15
-    static let minBendSamples = 2
-    static let minFlexionRelDegrees = 20.0
-    static let riseToleranceRatio = 0.02
+    static let foreshortenMinRatio = 0.7        // drop frames whose arm projects < 70% of this serve's typical span
+    static let smoothingWindow = 3              // median-of-3 keeps a 2-3 frame bend at ~10 FPS
+    static let nearTopLiftFraction = 0.75       // judge the elbow only near the toss apex (excludes the arm-down descent)
+    static let minApexLiftRatio = 0.3           // wrist must clear the shoulders for a real toss top
+    static let straightReferenceDegrees = 150.0 // the arm must reach ~straight before a bend counts as "straight -> bent"
+    static let minDipDegrees = 25.0             // straightest-near-top minus the most-bent angle that follows it
     static let minValidSamples = 3
+    static let minNearTopSamples = 3
     static let trustedSampleCount = 5.0
     static let minReportConfidence = 0.35
 }
 
 struct TossArmFault {
     let bendDetected: Bool
-    let minElbowAngle: Double
-    let maxFlexionDegrees: Double      // 180 - minElbowAngle
-    let flexionRelToStart: Double      // theta_start - theta_min over the lift
-    let bendDurationSeconds: Double
-    let measurementConfidence: Double  // 0..1; low => occluded / foreshortened / too few samples
+    let straightestAngle: Double      // peak elbow extension reached near the top of the toss
+    let minAngleAfterStraight: Double // most-bent elbow angle after that peak, still near the top
+    let dipDegrees: Double            // straightestAngle - minAngleAfterStraight
+    let measurementConfidence: Double // 0..1; low => occluded / foreshortened / too few samples
 }
 
 private struct TossArmSample {
@@ -35,7 +34,7 @@ private struct TossArmSample {
     let confidence: Double
 }
 
-// Detects a toss-arm fault where the arm starts straight then bends during the upward lift to trophy.
+// Detects a toss arm that reaches near-straight then bends near the top of the toss (a dip in elbow angle as it rises).
 func detectTossArmFault(
     in sequence: PoseSequence,
     trophyTimeSeconds: Double,
@@ -43,19 +42,19 @@ func detectTossArmFault(
 ) -> TossArmFault {
     let unreliable = TossArmFault(
         bendDetected: false,
-        minElbowAngle: 180.0,
-        maxFlexionDegrees: 0.0,
-        flexionRelToStart: 0.0,
-        bendDurationSeconds: 0.0,
+        straightestAngle: 180.0,
+        minAngleAfterStraight: 180.0,
+        dipDegrees: 0.0,
         measurementConfidence: 0.0
     )
 
-    let windowStart = trophyTimeSeconds - TossArmTuning.lookbackSeconds
+    let windowStart = trophyTimeSeconds - TossArmTuning.preTrophySeconds
+    let windowEnd = trophyTimeSeconds + TossArmTuning.postTrophySeconds
     var consideredCount = 0
     var samples: [TossArmSample] = []
     for frame in sequence.frames {
         let t = frame.timestampSeconds
-        guard t >= windowStart, t <= trophyTimeSeconds + 1e-6 else {
+        guard t >= windowStart, t <= windowEnd else {
             continue
         }
         consideredCount += 1
@@ -77,49 +76,39 @@ func detectTossArmFault(
         return unreliable
     }
 
-    let smoothTheta = medianFilter(framed.map { $0.theta }, window: TossArmTuning.smoothingWindow)
-    let smoothLift = medianFilter(framed.map { $0.lift }, window: TossArmTuning.smoothingWindow)
+    let theta = medianFilter(framed.map { $0.theta }, window: TossArmTuning.smoothingWindow)
+    let lift = medianFilter(framed.map { $0.lift }, window: TossArmTuning.smoothingWindow)
 
-    // Isolate the final continuous lift: walk back from trophy while the wrist was still rising.
-    let startIndex = liftStartIndex(smoothLift: smoothLift)
-    let riseTheta = Array(smoothTheta[startIndex...])
-    let riseLift = Array(smoothLift[startIndex...])
-    let riseTimes = framed[startIndex...].map { $0.t }
-    let riseConf = framed[startIndex...].map { $0.confidence }
-    guard riseTheta.count >= TossArmTuning.minValidSamples, let thetaMin = riseTheta.min() else {
+    // Restrict to the top of the toss (highest wrist) so the natural post-toss arm-down bend is excluded.
+    guard let apexLift = lift.max(), apexLift >= TossArmTuning.minApexLiftRatio else {
+        return unreliable
+    }
+    let liftThreshold = TossArmTuning.nearTopLiftFraction * apexLift
+    let nearTop = framed.indices.filter { lift[$0] >= liftThreshold }
+    guard nearTop.count >= TossArmTuning.minNearTopSamples else {
         return unreliable
     }
 
-    let thetaStart = median(Array(riseTheta.prefix(min(3, riseTheta.count)))) ?? riseTheta[0]
-    let flexionRel = thetaStart - thetaMin
-    let flexionAbs = 180.0 - thetaMin
+    // Straightest elbow near the top, then the most-bent angle that follows it in time (straight -> bend).
+    let straightPosition = nearTop.indices.max(by: { theta[nearTop[$0]] < theta[nearTop[$1]] }) ?? nearTop.startIndex
+    let straightestAngle = theta[nearTop[straightPosition]]
+    let minAfterStraight = nearTop[straightPosition...].map { theta[$0] }.min() ?? straightestAngle
+    let dip = straightestAngle - minAfterStraight
 
-    let bendRun = longestBendRun(
-        theta: riseTheta,
-        times: riseTimes,
-        enter: TossArmTuning.enterBendDegrees,
-        exit: TossArmTuning.exitBendDegrees
-    )
-
-    // Gate: the arm must bend WHILE rising (θ falls as wrist lift grows); a flat slope means "not on the way up".
-    let onTheWayUp = (regressionSlope(x: riseLift, y: riseTheta) ?? 0.0) < 0.0
-
+    let nearTopConfidence = nearTop.map { framed[$0].confidence }
     let coverage = clamp(Double(framed.count) / Double(max(consideredCount, 1)))
-    let meanConf = riseConf.reduce(0.0, +) / Double(riseConf.count)
-    let sampleFactor = clamp(Double(riseTheta.count) / TossArmTuning.trustedSampleCount)
+    let meanConf = nearTopConfidence.reduce(0.0, +) / Double(nearTopConfidence.count)
+    let sampleFactor = clamp(Double(nearTop.count) / TossArmTuning.trustedSampleCount)
     let measurementConfidence = clamp(coverage * meanConf * sampleFactor)
 
-    let bendDetected = bendRun.duration >= TossArmTuning.minBendDurationSeconds
-        && bendRun.samples >= TossArmTuning.minBendSamples
-        && flexionRel >= TossArmTuning.minFlexionRelDegrees
-        && onTheWayUp
+    let bendDetected = straightestAngle >= TossArmTuning.straightReferenceDegrees
+        && dip >= TossArmTuning.minDipDegrees
 
     return TossArmFault(
         bendDetected: bendDetected,
-        minElbowAngle: thetaMin,
-        maxFlexionDegrees: flexionAbs,
-        flexionRelToStart: flexionRel,
-        bendDurationSeconds: bendRun.duration,
+        straightestAngle: straightestAngle,
+        minAngleAfterStraight: minAfterStraight,
+        dipDegrees: dip,
         measurementConfidence: measurementConfidence
     )
 }
@@ -130,6 +119,11 @@ func serveEventApplyingTossArmFault(_ event: ServeEvent, in sequence: PoseSequen
         in: sequence,
         trophyTimeSeconds: event.trophyTimeSeconds,
         handedness: event.handedness
+    )
+    LiveServeDiagnostics.logTossArmFault(
+        trophyTimeSeconds: event.trophyTimeSeconds,
+        handedness: event.handedness,
+        fault: fault
     )
     guard let item = tossArmFaultFeedback(fault) else {
         return event
@@ -155,7 +149,7 @@ func tossArmFaultFeedback(_ fault: TossArmFault) -> FeedbackItem? {
     }
     return FeedbackItem(
         category: "toss_arm",
-        severity: clamp((fault.flexionRelToStart - 10.0) / 45.0),
+        severity: clamp((fault.dipDegrees - 15.0) / 45.0),
         message: "Keep your tossing arm straight all the way up."
     )
 }
@@ -199,69 +193,6 @@ private func tossArmSample(frame: PoseFrame, handedness: Handedness) -> TossArmS
         armSpanRatio: (distance(s, e) + distance(e, w)) / bodyScale,
         confidence: confidence
     )
-}
-
-private func liftStartIndex(smoothLift: [Double]) -> Int {
-    guard smoothLift.count > 1 else {
-        return 0
-    }
-    var i = smoothLift.count - 1
-    while i > 0, smoothLift[i - 1] <= smoothLift[i] + TossArmTuning.riseToleranceRatio {
-        i -= 1
-    }
-    return i
-}
-
-private func longestBendRun(
-    theta: [Double],
-    times: [Double],
-    enter: Double,
-    exit: Double
-) -> (duration: Double, samples: Int) {
-    var best = (duration: 0.0, samples: 0)
-    var startTime: Double?
-    var startIndex = 0
-    var inBend = false
-
-    for i in theta.indices {
-        if !inBend {
-            if theta[i] < enter {
-                inBend = true
-                startTime = times[i]
-                startIndex = i
-            }
-        } else if theta[i] > exit {
-            if let start = startTime, times[i - 1] - start > best.duration {
-                best = (times[i - 1] - start, i - startIndex)
-            }
-            inBend = false
-            startTime = nil
-        }
-    }
-    if inBend, let start = startTime, (times.last ?? start) - start > best.duration {
-        best = ((times.last ?? start) - start, theta.count - startIndex)
-    }
-    return best
-}
-
-private func regressionSlope(x: [Double], y: [Double]) -> Double? {
-    let n = Double(x.count)
-    guard n > 1 else {
-        return nil
-    }
-    let meanX = x.reduce(0.0, +) / n
-    let meanY = y.reduce(0.0, +) / n
-    var numerator = 0.0
-    var denominator = 0.0
-    for i in x.indices {
-        let dx = x[i] - meanX
-        numerator += dx * (y[i] - meanY)
-        denominator += dx * dx
-    }
-    guard denominator > 1e-9 else {
-        return nil
-    }
-    return numerator / denominator
 }
 
 private func medianFilter(_ values: [Double], window: Int) -> [Double] {

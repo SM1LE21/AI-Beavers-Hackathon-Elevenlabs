@@ -83,6 +83,16 @@ public enum LiveServeDiagnostics {
         )
     }
 
+    static func logTossArmFault(
+        trophyTimeSeconds: Double,
+        handedness: Handedness,
+        fault: TossArmFault
+    ) {
+        recordNotice(
+            "toss_arm_fault trophy=\(fixed(trophyTimeSeconds, precision: 2)) tossSide=\(handedness.opposite.rawValue) bend=\(fault.bendDetected) straightest=\(fixed(fault.straightestAngle, precision: 1)) minAfter=\(fixed(fault.minAngleAfterStraight, precision: 1)) dip=\(fixed(fault.dipDegrees, precision: 1)) confidence=\(fixed(fault.measurementConfidence, precision: 2))"
+        )
+    }
+
     static func logSessionShadowContext(
         provider: LivePoseProviderKind,
         reason: String,
