@@ -8,6 +8,14 @@ Bullets are concrete and compact — no narration.
 
 ---
 
+## 2026-06-06 16:52 — Toss-arm detector: fix the always-"correct" bail
+- Root cause from logs: detector returned its unreliable sentinel every serve because the 0.5 visibility floor discarded the raised toss arm (ML Kit reads it ~0.3–0.5). Lowered to 0.1.
+- Re-anchored on the toss arc (wrist-lift apex + walk-back to toss start) instead of the trophy/contact frame; measures straight→bent across the whole rise.
+
+## 2026-06-06 16:46 — Bundled voice fallback when ElevenLabs fails
+- Pre-generated the 3 fixed coaching lines with ElevenLabs into `Resources/Voice/*.mp3`; `VoiceFeedback.speak` now takes a `VoiceLine` and plays the bundled MP3 when the live call errors or no key is set.
+- Run `xcodegen generate` to bundle the new audio resources.
+
 ## 2026-06-06 16:31 — Dump toss-window joints per serve for LLM comparison
 - Emit `serve_toss_dump` (single-line JSON: serve meta, rule verdict, and toss-window joints nose/shoulders/elbows/wrists/hips as [x,y,visibility]) for every detected serve, to hand to an LLM and compare against the rule-based toss-arm verdict.
 - Built in `ServeTossDump.swift`; logged alongside `toss_arm_fault` in `serveEventApplyingTossArmFault`.
