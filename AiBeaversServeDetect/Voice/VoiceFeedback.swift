@@ -12,6 +12,7 @@ final class VoiceFeedback {
             print("VoiceFeedback: set elevenLabsAPIKey in Secrets.swift to hear feedback.")
             return
         }
+        print("VoiceFeedback: requesting TTS (\(text.count) chars, voice=\(Secrets.elevenLabsVoiceID))")
         Task { await synthesizeAndPlay(text) }
     }
 
@@ -38,12 +39,14 @@ final class VoiceFeedback {
         ])
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+        let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+        print("VoiceFeedback: HTTP \(status), \(data.count) bytes")
+        if status != 200 {
             let detail = String(data: data, encoding: .utf8) ?? ""
             throw NSError(
                 domain: "VoiceFeedback",
-                code: http.statusCode,
-                userInfo: [NSLocalizedDescriptionKey: "ElevenLabs \(http.statusCode): \(detail)"]
+                code: status,
+                userInfo: [NSLocalizedDescriptionKey: "ElevenLabs \(status): \(detail)"]
             )
         }
         return data
@@ -56,7 +59,8 @@ final class VoiceFeedback {
             try session.setActive(true)
             let player = try AVAudioPlayer(data: audio)
             self.player = player
-            player.play()
+            let started = player.play()
+            print("VoiceFeedback: playing \(audio.count) bytes, started=\(started), volume=\(AVAudioSession.sharedInstance().outputVolume)")
         } catch {
             print("VoiceFeedback playback error: \(error.localizedDescription)")
         }
