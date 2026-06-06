@@ -11,10 +11,14 @@ assets.
 ## Run Locally
 
 ```bash
+cp Secrets.swift.example AiBeaversServeDetect/Voice/Secrets.swift  # then paste your ElevenLabs key
 xcodegen generate
 pod install
 open AiBeaversServeDetect.xcworkspace
 ```
+
+`Secrets.swift` is gitignored. Set `elevenLabsAPIKey` to hear per-serve voice
+feedback; leaving it empty disables voice but keeps detection working.
 
 Then run the `AiBeaversServeDetect` scheme on a physical iPhone. Camera and pose
 runtime validation on simulator is not meaningful.
