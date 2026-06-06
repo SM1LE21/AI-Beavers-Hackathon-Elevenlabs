@@ -29,7 +29,7 @@ enum VoiceLine {
 // pre-generated bundled MP3 when the live call fails or no key is set.
 @MainActor
 final class VoiceFeedback {
-    private let modelID = "eleven_turbo_v2_5"
+    private let modelID = "eleven_v3"
     private var player: AVAudioPlayer?
 
     func speak(_ line: VoiceLine) {

@@ -8,6 +8,9 @@ Bullets are concrete and compact — no narration.
 
 ---
 
+## 2026-06-06 17:00 — Regenerate voice lines with new voice + eleven_v3
+- Switched live TTS model to `eleven_v3` and regenerated the 3 bundled `Resources/Voice/*.mp3` with the new voice ID from `Secrets.swift`.
+
 ## 2026-06-06 16:52 — Toss-arm detector: fix the always-"correct" bail
 - Root cause from logs: detector returned its unreliable sentinel every serve because the 0.5 visibility floor discarded the raised toss arm (ML Kit reads it ~0.3–0.5). Lowered to 0.1.
 - Re-anchored on the toss arc (wrist-lift apex + walk-back to toss start) instead of the trophy/contact frame; measures straight→bent across the whole rise.
