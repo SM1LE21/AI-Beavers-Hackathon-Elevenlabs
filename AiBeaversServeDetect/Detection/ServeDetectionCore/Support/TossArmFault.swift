@@ -10,8 +10,7 @@ private enum TossArmTuning {
     static let smoothingWindow = 3              // median-of-3 keeps a 2-3 frame bend at ~10 FPS
     static let minApexLiftRatio = 0.3           // toss wrist must clear the shoulders for a real toss top
     static let riseToleranceRatio = 0.05        // ride through small noise while walking back to the toss start
-    static let straightReferenceDegrees = 150.0 // the arm must reach ~straight before a bend counts as "straight -> bent"
-    static let minDipDegrees = 20.0             // straightest-during-the-rise minus the most-bent angle that follows it
+    static let straightThresholdDegrees = 160.0 // toss arm must reach ~this straight near the top; below = bent toss
     static let minValidSamples = 3
     static let minRiseSamples = 3
     static let trustedSampleCount = 5.0
@@ -57,7 +56,7 @@ func detectTossArmFault(
             continue
         }
         consideredCount += 1
-        if let sample = tossArmSample(frame: frame, handedness: handedness) {
+        if let sample = tossArmSample(frame: frame) {
             samples.append(sample)
         }
     }
@@ -102,8 +101,7 @@ func detectTossArmFault(
     let sampleFactor = clamp(Double(riseCount) / TossArmTuning.trustedSampleCount)
     let measurementConfidence = clamp(coverage * sampleFactor)
 
-    let bendDetected = straightestAngle >= TossArmTuning.straightReferenceDegrees
-        && dip >= TossArmTuning.minDipDegrees
+    let bendDetected = straightestAngle < TossArmTuning.straightThresholdDegrees
 
     return TossArmFault(
         bendDetected: bendDetected,
@@ -153,21 +151,17 @@ func tossArmFaultFeedback(_ fault: TossArmFault) -> FeedbackItem? {
     }
     return FeedbackItem(
         category: "toss_arm",
-        severity: clamp((fault.dipDegrees - 15.0) / 45.0),
+        severity: clamp((TossArmTuning.straightThresholdDegrees - fault.straightestAngle) / 40.0),
         message: "Keep your tossing arm straight all the way up."
     )
 }
 
-private func tossArmSample(frame: PoseFrame, handedness: Handedness) -> TossArmSample? {
-    let tossSide = handedness.opposite
-    let shoulderName: LandmarkName = tossSide == .right ? .rightShoulder : .leftShoulder
-    let elbowName: LandmarkName = tossSide == .right ? .rightElbow : .leftElbow
-    let wristName: LandmarkName = tossSide == .right ? .rightWrist : .leftWrist
-
+private func tossArmSample(frame: PoseFrame) -> TossArmSample? {
+    // Toss arm is always the left arm for this setup; segmentation handedness is unreliable, so ignore it.
     guard
-        let shoulder = frame.landmarks[shoulderName],
-        let elbow = frame.landmarks[elbowName],
-        let wrist = frame.landmarks[wristName],
+        let shoulder = frame.landmarks[.leftShoulder],
+        let elbow = frame.landmarks[.leftElbow],
+        let wrist = frame.landmarks[.leftWrist],
         let leftShoulder = frame.landmarks[.leftShoulder], leftShoulder.visibility > 0,
         let rightShoulder = frame.landmarks[.rightShoulder], rightShoulder.visibility > 0
     else {
