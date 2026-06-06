@@ -28,6 +28,7 @@ final class ServeDetectionViewModel: ObservableObject {
     )
     private let analysisWorker = ServeSessionAnalysisWorker()
     private let voiceFeedback = VoiceFeedback()
+    private let coaching: CoachingProvider = GeminiCoachingProvider()
     // Signature of the trajectory toss-arm detector's verdict (TossArmFault.swift).
     private let tossArmFaultMessage = "Keep your tossing arm straight all the way up."
 
@@ -37,6 +38,8 @@ final class ServeDetectionViewModel: ObservableObject {
     private var pendingIngestCount = 0
     private var latestPoseTimestampSeconds = 0.0
     private var lastDetectionDelaySeconds: Double?
+    private var faultCount = 0
+    private var cleanStreak = 0
 
     var captureSession: AVCaptureSession {
         captureService.session
@@ -94,6 +97,8 @@ final class ServeDetectionViewModel: ObservableObject {
         serveCount = 0
         lastServe = nil
         lastDetectionDelaySeconds = nil
+        faultCount = 0
+        cleanStreak = 0
         latestPoseTimestampSeconds = 0.0
         nextAnalysisSequenceNumber = 0
         pendingIngestCount = 0
@@ -282,11 +287,32 @@ final class ServeDetectionViewModel: ObservableObject {
         lastDetectionDelaySeconds = max(detectedAtSeconds - serve.impactTimeSeconds, 0)
         statusMessage = "Serve \(serveCount) detected."
         let hasTossArmFault = serve.feedback.contains { $0.message == tossArmFaultMessage }
-        speakServeFeedback(hasTossArmFault: hasTossArmFault)
+        coachAndSpeak(fault: hasTossArmFault)
     }
 
-    private func speakServeFeedback(hasTossArmFault: Bool) {
-        voiceFeedback.speak(hasTossArmFault ? .tossArmFault : .clean)
+    // Builds the session context, asks the coaching LLM for one short line, and speaks it —
+    // falling back to the fixed line when the LLM is unavailable.
+    private func coachAndSpeak(fault: Bool) {
+        if fault {
+            faultCount += 1
+            cleanStreak = 0
+        } else {
+            cleanStreak += 1
+        }
+        let fallbackLine: VoiceLine = fault ? .tossArmFault : .clean
+        let context = CoachContext(
+            profile: .demo,
+            serveNumber: serveCount,
+            faultsSoFar: faultCount,
+            cleanStreak: cleanStreak
+        )
+        let activeSessionID = sessionID
+        Task { [weak self] in
+            guard let self else { return }
+            let line = await self.coaching.coachingLine(for: context, fault: fault)
+            guard self.sessionID == activeSessionID else { return }
+            self.voiceFeedback.speak(text: line ?? fallbackLine.text, fallback: fallbackLine)
+        }
     }
 
     func testVoice() {
