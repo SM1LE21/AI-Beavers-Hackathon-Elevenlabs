@@ -33,20 +33,26 @@ final class VoiceFeedback {
     private var player: AVAudioPlayer?
 
     func speak(_ line: VoiceLine) {
-        print("VoiceFeedback: requesting TTS (\(line.text.count) chars, voice=\(Secrets.elevenLabsVoiceID))")
-        Task { await synthesizeAndPlay(line) }
+        speak(text: line.text, fallback: line)
     }
 
-    private func synthesizeAndPlay(_ line: VoiceLine) async {
+    // Speaks arbitrary text via ElevenLabs; falls back to `fallback`'s bundled MP3
+    // when the live call errors or no key is set.
+    func speak(text: String, fallback: VoiceLine) {
+        print("VoiceFeedback: requesting TTS (\(text.count) chars, voice=\(Secrets.elevenLabsVoiceID))")
+        Task { await synthesizeAndPlay(text: text, fallback: fallback) }
+    }
+
+    private func synthesizeAndPlay(text: String, fallback: VoiceLine) async {
         if !Secrets.elevenLabsAPIKey.isEmpty {
             do {
-                play(try await synthesize(line.text))
+                play(try await synthesize(text))
                 return
             } catch {
                 print("VoiceFeedback synthesis error: \(error.localizedDescription) — using bundled audio")
             }
         }
-        playBundled(line)
+        playBundled(fallback)
     }
 
     private func synthesize(_ text: String) async throws -> Data {
