@@ -2,6 +2,7 @@
 - 2026-06-06 — AI Beavers Hackathon, 8h build. First milestone: open app → start detecting → detect/count tennis serves on device.
 
 ## Recent changes
+- 2026-06-06 — Bent-toss-arm detection working on device: toss arm hard-coded to left (segmentation handedness was unreliable), verdict switched to absolute elbow extension (<160° near the toss top). Clean tosses pass, bent tosses fire the fault line.
 - 2026-06-06 — Bundled voice fallback: pre-generated the 3 fixed coaching lines with ElevenLabs into `Resources/Voice/*.mp3`; `VoiceFeedback.speak(VoiceLine)` plays the bundled MP3 when the live call errors or no key is set. Voice now works offline / without a key.
 - 2026-06-06 — Per-serve ElevenLabs voice feedback: `Voice/VoiceFeedback.swift` speaks one line per detected serve (fault vs clean), keyed off the `toss_arm` feedback item. Key in gitignored `Secrets.swift`.
 - 2026-06-06 — Chose the demo serve error (bent tossing arm) and added a trajectory-based detector: new `Support/TossArmFault.swift` + verdict merged onto every emitted serve in `ServeSessionProcessor`. ADR 0001 records the decision. Not yet shown in UI.
@@ -19,7 +20,8 @@
 ## Next steps
 - Run `xcodegen generate` to add `TossArmFault.swift` to the target, then build (SourceKit shows false "cannot find type" errors until the project is regenerated).
 - Human device validation: run a real serve, confirm overlay tracking + count, and confirm a bent toss arm produces the `toss_arm` feedback item.
-- Verify the reworked toss-arm detector on device: do a deliberately bent toss + a clean toss, read the `toss_arm_fault` log line (straightest/minAfter/dip) for each, and calibrate `straightReference` (150°) and `minDip` (25°) in `TossArmFault.swift` from those numbers.
+- Toss-arm detector verified working; tune `straightThresholdDegrees` (160°) in `TossArmFault.swift` only if clean serves false-trigger (lower) or borderline bends slip (raise).
+- Upstream follow-up: `ServeSessionShadowLifecycleValidator` also derives the toss from `handedness.opposite`, so some bent-toss serves get `reject:missing_toss_lifecycle` and never emit (no feedback at all). Hard-coding toss=left there too would let more bent serves through to scoring.
 - Voice now plays the bundled `Resources/Voice/*.mp3` even without a key; `xcodegen generate` must run to bundle those resources. Paste an ElevenLabs key into `Secrets.swift` for the live voice; optionally surface the fault text in the UI too.
 
 ## Runtime / deployment

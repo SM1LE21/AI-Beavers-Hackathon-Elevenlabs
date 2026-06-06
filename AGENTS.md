@@ -141,3 +141,6 @@ Commit the changelog alongside or right after the work.
 ## Learnings - Here Agents should add lines for other agents to remember
 - Add only durable learnings that change future implementation choices.
 - Do not use this file for temporary notes, architecture narration, or long explanations.
+- Segmentation/ML Kit `handedness` is unreliable for this single-camera setup (it flips between serves and often picks the hitting arm). The toss arm is the LEFT arm; key toss-arm logic on `.left`, not `handedness.opposite`.
+- The real "bent toss arm" fault is a chronically bent arm (~110°), not a straight→bent dip. Detect it by absolute elbow extension near the toss apex (flag if it never reaches ~160°), not by a relative dip.
+- ML Kit `inFrameLikelihood` (→ `visibility`) for the raised toss arm reads ~0.3–0.5; gate toss-arm frames at `>0`/0.1, not 0.5, or the analyzer is starved.

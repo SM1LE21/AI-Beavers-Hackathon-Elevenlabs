@@ -8,6 +8,9 @@ Bullets are concrete and compact — no narration.
 
 ---
 
+## 2026-06-06 18:11 — Bent-toss-arm detection working on device
+- Hard-coded the toss arm to the left (segmentation handedness flips and was selecting the hitting arm) and switched the verdict to absolute extension: flag when the straightest the left elbow reaches near the toss top stays below 160°. Verified on device: clean tosses pass, bent tosses fire.
+
 ## 2026-06-06 17:00 — Regenerate voice lines with new voice + eleven_v3
 - Switched live TTS model to `eleven_v3` and regenerated the 3 bundled `Resources/Voice/*.mp3` with the new voice ID from `Secrets.swift`.
 
