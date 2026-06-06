@@ -290,6 +290,9 @@ public final class LivePoseCaptureService: NSObject {
     }
 
     private func process(sampleBuffer: CMSampleBuffer) {
+        guard isPoseProcessingEnabled else {
+            return
+        }
         let timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer).seconds
         guard timestamp.isFinite else {
             return

@@ -8,6 +8,9 @@ Bullets are concrete and compact — no narration.
 
 ---
 
+## 2026-06-06 13:05 — Gate pose processing to active session
+- MLKit pose inference and skeleton render now run only while detecting; the idle camera preview no longer processes frames.
+
 ## 2026-06-06 12:55 — Full screen, HUD restore, serve feedback
 - Added UILaunchScreen so the app uses the whole screen (removes the top/bottom black letterbox bars).
 - Restored the "Serve Detect" title and count pill (always visible).
