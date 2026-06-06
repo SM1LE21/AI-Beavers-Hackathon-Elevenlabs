@@ -8,6 +8,9 @@ Bullets are concrete and compact — no narration.
 
 ---
 
+## 2026-06-06 18:30 — Add app icon
+- Added `Assets.xcassets/AppIcon` (1024² opaque, transparent source flattened onto white) and set `ASSETCATALOG_COMPILER_APPICON_NAME` in `project.yml`.
+
 ## 2026-06-06 18:11 — Bent-toss-arm detection working on device
 - Hard-coded the toss arm to the left (segmentation handedness flips and was selecting the hitting arm) and switched the verdict to absolute extension: flag when the straightest the left elbow reaches near the toss top stays below 160°. Verified on device: clean tosses pass, bent tosses fire.
 
