@@ -8,6 +8,10 @@ Bullets are concrete and compact — no narration.
 
 ---
 
+## 2026-06-06 18:45 — LLM coaching line before TTS
+- Inserted a fast Gemini (`gemini-2.5-flash-lite`) step between error detection and ElevenLabs: per serve it turns a hardcoded demo profile + live session signals + the fault/clean verdict into one short spoken line (≤10 words), behind a `CoachingProvider` protocol. New `Voice/CoachContext.swift`, `Voice/CoachingPrompt.swift`, `Voice/CoachingProvider.swift`.
+- Layered, never-silent fallback: Gemini miss (empty key / >1.2 s / error / over-long) → canned `VoiceLine` → ElevenLabs → bundled MP3. `VoiceFeedback` gained `speak(text:fallback:)`; empty `geminiAPIKey` keeps today's behavior. ADR 0002. Branch `feat/llm-coaching-line`.
+
 ## 2026-06-06 18:30 — Add app icon
 - Added `Assets.xcassets/AppIcon` (1024² opaque, transparent source flattened onto white) and set `ASSETCATALOG_COMPILER_APPICON_NAME` in `project.yml`.
 

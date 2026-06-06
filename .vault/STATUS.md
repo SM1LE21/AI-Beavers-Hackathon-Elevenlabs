@@ -2,6 +2,7 @@
 - 2026-06-06 — AI Beavers Hackathon, 8h build. First milestone: open app → start detecting → detect/count tennis serves on device.
 
 ## Recent changes
+- 2026-06-06 — LLM coaching line (branch `feat/llm-coaching-line`): a fast Gemini (`gemini-2.5-flash-lite`) call now sits between error detection and ElevenLabs, turning a hardcoded demo profile + session signals (serve #, faults, clean streak) + the fault/clean verdict into one ≤10-word spoken line, behind a `CoachingProvider` protocol (Mock/Anthropic swappable). Layered fallback Gemini→canned line→ElevenLabs→bundled MP3; empty `geminiAPIKey` = no-op. New `Voice/Coach*.swift`; `VoiceFeedback.speak(text:fallback:)`. ADR 0002.
 - 2026-06-06 — Bent-toss-arm detection working on device: toss arm hard-coded to left (segmentation handedness was unreliable), verdict switched to absolute elbow extension (<160° near the toss top). Clean tosses pass, bent tosses fire the fault line.
 - 2026-06-06 — Bundled voice fallback: pre-generated the 3 fixed coaching lines with ElevenLabs into `Resources/Voice/*.mp3`; `VoiceFeedback.speak(VoiceLine)` plays the bundled MP3 when the live call errors or no key is set. Voice now works offline / without a key.
 - 2026-06-06 — Per-serve ElevenLabs voice feedback: `Voice/VoiceFeedback.swift` speaks one line per detected serve (fault vs clean), keyed off the `toss_arm` feedback item. Key in gitignored `Secrets.swift`.
@@ -18,6 +19,7 @@
 - 2026-06-06 — Pre-existing (not introduced by the toss-arm work, surfaced by review): on the trophy-recovery path `ServeSessionProcessor` calls `forgetEmittedServe(primaryServe)` on `.hold`/`.reject` with the recovered event's new UUID, so the originally-registered cluster (`nextServe`) is never removed and can suppress a genuine re-detection of that serve for up to ~12 s (emission-tracker retention). Fix: also forget `nextServe`, or match by cluster identity. Left unfixed to keep the toss-arm change surgical.
 
 ## Next steps
+- LLM coaching line (branch `feat/llm-coaching-line`): run `xcodegen generate` to add the 3 new `Voice/*.swift` files to the target, then build. Paste a Gemini key into `Secrets.swift` (`geminiAPIKey`) to hear LLM-generated lines; empty key keeps the fixed canned lines. Tune the prompt / model / 1.2 s timeout in `Voice/CoachingProvider.swift` + `Voice/CoachingPrompt.swift`.
 - Run `xcodegen generate` to add `TossArmFault.swift` to the target, then build (SourceKit shows false "cannot find type" errors until the project is regenerated).
 - Human device validation: run a real serve, confirm overlay tracking + count, and confirm a bent toss arm produces the `toss_arm` feedback item.
 - Toss-arm detector verified working; tune `straightThresholdDegrees` (160°) in `TossArmFault.swift` only if clean serves false-trigger (lower) or borderline bends slip (raise).
