@@ -1,28 +1,52 @@
 import AVFoundation
 import Foundation
 
-// Speaks one short coaching line per serve via ElevenLabs text-to-speech.
+// The fixed set of coaching lines. Each carries its live TTS text and the
+// bundled MP3 used when the ElevenLabs call is unavailable.
+enum VoiceLine {
+    case tossArmFault
+    case clean
+    case test
+
+    var text: String {
+        switch self {
+        case .tossArmFault: return "Heads up. Your tossing arm bent during the ball toss. Keep it straight all the way up."
+        case .clean: return "Nice serve. Your tossing arm stayed straight through the toss."
+        case .test: return "Voice check. Keep your tossing arm straight all the way up."
+        }
+    }
+
+    var resourceName: String {
+        switch self {
+        case .tossArmFault: return "voice_fault"
+        case .clean: return "voice_clean"
+        case .test: return "voice_test"
+        }
+    }
+}
+
+// Speaks one short coaching line per serve via ElevenLabs, falling back to a
+// pre-generated bundled MP3 when the live call fails or no key is set.
 @MainActor
 final class VoiceFeedback {
     private let modelID = "eleven_turbo_v2_5"
     private var player: AVAudioPlayer?
 
-    func speak(_ text: String) {
-        guard !Secrets.elevenLabsAPIKey.isEmpty else {
-            print("VoiceFeedback: set elevenLabsAPIKey in Secrets.swift to hear feedback.")
-            return
-        }
-        print("VoiceFeedback: requesting TTS (\(text.count) chars, voice=\(Secrets.elevenLabsVoiceID))")
-        Task { await synthesizeAndPlay(text) }
+    func speak(_ line: VoiceLine) {
+        print("VoiceFeedback: requesting TTS (\(line.text.count) chars, voice=\(Secrets.elevenLabsVoiceID))")
+        Task { await synthesizeAndPlay(line) }
     }
 
-    private func synthesizeAndPlay(_ text: String) async {
-        do {
-            let audio = try await synthesize(text)
-            play(audio)
-        } catch {
-            print("VoiceFeedback synthesis error: \(error.localizedDescription)")
+    private func synthesizeAndPlay(_ line: VoiceLine) async {
+        if !Secrets.elevenLabsAPIKey.isEmpty {
+            do {
+                play(try await synthesize(line.text))
+                return
+            } catch {
+                print("VoiceFeedback synthesis error: \(error.localizedDescription) — using bundled audio")
+            }
         }
+        playBundled(line)
     }
 
     private func synthesize(_ text: String) async throws -> Data {
@@ -50,6 +74,16 @@ final class VoiceFeedback {
             )
         }
         return data
+    }
+
+    private func playBundled(_ line: VoiceLine) {
+        guard let url = Bundle.main.url(forResource: line.resourceName, withExtension: "mp3"),
+              let audio = try? Data(contentsOf: url) else {
+            print("VoiceFeedback: missing bundled audio \(line.resourceName).mp3")
+            return
+        }
+        print("VoiceFeedback: playing bundled \(line.resourceName).mp3 (\(audio.count) bytes)")
+        play(audio)
     }
 
     private func play(_ audio: Data) {

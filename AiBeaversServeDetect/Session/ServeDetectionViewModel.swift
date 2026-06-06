@@ -286,14 +286,11 @@ final class ServeDetectionViewModel: ObservableObject {
     }
 
     private func speakServeFeedback(hasTossArmFault: Bool) {
-        let line = hasTossArmFault
-            ? "Heads up. Your tossing arm bent during the ball toss. Keep it straight all the way up."
-            : "Nice serve. Your tossing arm stayed straight through the toss."
-        voiceFeedback.speak(line)
+        voiceFeedback.speak(hasTossArmFault ? .tossArmFault : .clean)
     }
 
     func testVoice() {
-        voiceFeedback.speak("Voice check. Keep your tossing arm straight all the way up.")
+        voiceFeedback.speak(.test)
     }
 
     private func invalidateSession() {
