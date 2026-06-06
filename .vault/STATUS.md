@@ -11,6 +11,9 @@
 ## Blockers
 - (none)
 
+## Known issues
+- 2026-06-06 — Pre-existing (not introduced by the toss-arm work, surfaced by review): on the trophy-recovery path `ServeSessionProcessor` calls `forgetEmittedServe(primaryServe)` on `.hold`/`.reject` with the recovered event's new UUID, so the originally-registered cluster (`nextServe`) is never removed and can suppress a genuine re-detection of that serve for up to ~12 s (emission-tracker retention). Fix: also forget `nextServe`, or match by cluster identity. Left unfixed to keep the toss-arm change surgical.
+
 ## Next steps
 - Run `xcodegen generate` to add `TossArmFault.swift` to the target, then build (SourceKit shows false "cannot find type" errors until the project is regenerated).
 - Human device validation: run a real serve, confirm overlay tracking + count, and confirm a bent toss arm produces the `toss_arm` feedback item.
