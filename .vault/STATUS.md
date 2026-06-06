@@ -18,7 +18,7 @@
 ## Next steps
 - Run `xcodegen generate` to add `TossArmFault.swift` to the target, then build (SourceKit shows false "cannot find type" errors until the project is regenerated).
 - Human device validation: run a real serve, confirm overlay tracking + count, and confirm a bent toss arm produces the `toss_arm` feedback item.
-- Calibrate the toss-arm thresholds (θ_min + flexion_rel) on real straight-vs-bent toss clips; defaults are in `TossArmFault.swift`.
+- Verify the reworked toss-arm detector on device: do a deliberately bent toss + a clean toss, read the `toss_arm_fault` log line (straightest/minAfter/dip) for each, and calibrate `straightReference` (150°) and `minDip` (25°) in `TossArmFault.swift` from those numbers.
 - Paste an ElevenLabs key into `Secrets.swift` to hear per-serve voice feedback (pipeline wired in `VoiceFeedback`); optionally surface the fault text in the UI too.
 
 ## Runtime / deployment
