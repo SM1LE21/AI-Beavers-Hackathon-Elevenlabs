@@ -28,6 +28,8 @@ final class ServeDetectionViewModel: ObservableObject {
     )
     private let analysisWorker = ServeSessionAnalysisWorker()
     private let voiceFeedback = VoiceFeedback()
+    // Signature of the trajectory toss-arm detector's verdict (TossArmFault.swift).
+    private let tossArmFaultMessage = "Keep your tossing arm straight all the way up."
 
     private var didConfigureCallbacks = false
     private var sessionID = 0
@@ -279,7 +281,7 @@ final class ServeDetectionViewModel: ObservableObject {
         )
         lastDetectionDelaySeconds = max(detectedAtSeconds - serve.impactTimeSeconds, 0)
         statusMessage = "Serve \(serveCount) detected."
-        let hasTossArmFault = serve.feedback.contains { $0.category == "toss_arm" }
+        let hasTossArmFault = serve.feedback.contains { $0.message == tossArmFaultMessage }
         speakServeFeedback(hasTossArmFault: hasTossArmFault)
     }
 
