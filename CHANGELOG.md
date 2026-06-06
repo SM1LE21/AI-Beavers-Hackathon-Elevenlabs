@@ -8,6 +8,9 @@ Bullets are concrete and compact — no narration.
 
 ---
 
+## 2026-06-06 12:55 — Full screen, HUD restore, serve feedback
+- Added UILaunchScreen so the app uses the whole screen (removes the top/bottom black letterbox bars).
+
 ## 2026-06-06 12:40 — Strip preview HUD chrome
 - Removed the title and always-on status line; count pill now shows only while detecting, so the preview is just camera + Start button.
 - Forced full-height layout so the Start button pins to the bottom instead of floating mid-screen.

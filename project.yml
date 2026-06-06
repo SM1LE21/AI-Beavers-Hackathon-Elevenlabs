@@ -54,6 +54,7 @@ targets:
         UISupportedInterfaceOrientations~ipad:
           - UIInterfaceOrientationPortrait
         NSCameraUsageDescription: "Serve Detect uses the camera to track your pose and detect tennis serves on device."
+        UILaunchScreen: {}
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.aibeavers.servedetect
