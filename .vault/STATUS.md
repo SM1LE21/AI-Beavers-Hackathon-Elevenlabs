@@ -1,17 +1,18 @@
 ## Current focus
-- 2026-06-06 — AI Beavers Hackathon, 8h build. Core loop: detect a serve → detect one error → speak feedback via ElevenLabs. Swift, on device, ElevenLabs is the only network hop.
+- 2026-06-06 — AI Beavers Hackathon, 8h build. First milestone: open app → start detecting → detect/count tennis serves on device.
 
 ## Recent changes
+- 2026-06-06 — Minimal native Swift app scaffolded with local serve-detection source, Google ML Kit pose runtime, live camera preview, skeleton overlay, and start/stop serve counting UI. No private Founta pods.
 - 2026-06-06 — Repo initialized with standard agent conventions (AGENTS.md, CLAUDE.md, .gitignore, README.md, CHANGELOG.md, .vault/).
 
 ## Blockers
 - (none)
 
 ## Next steps
-- Stand up the camera capture + serve-detection scaffold (Vision/CoreML, on device).
+- Human device validation: run a real serve, confirm the overlay tracks the body, and confirm the serve count increments a few seconds after impact.
 - Pick the single error class to detect — most reliably detectable, not most impressive.
 - Wire detected fault → cue text → ElevenLabs TTS → audio out.
-- ADR 0001: on-device detection stack (Vision/CoreML) and the chosen error class.
+- ADR 0001: on-device detection stack and the chosen error class.
 
 ## Runtime / deployment
-- iOS, on physical device (camera + perf). ElevenLabs API key in `.env` (gitignored), never hardcoded.
+- iOS, on physical device (camera + ML Kit perf). Current milestone has no network dependency. Future ElevenLabs API key belongs in `.env` (gitignored), never hardcoded.

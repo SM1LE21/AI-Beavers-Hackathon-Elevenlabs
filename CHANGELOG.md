@@ -8,6 +8,10 @@ Bullets are concrete and compact — no narration.
 
 ---
 
+## 2026-06-06 11:30 — Minimal serve detection app
+- Added a native SwiftUI iOS app scaffold with XcodeGen, CocoaPods, Google ML Kit pose detection, local serve-detection source, live camera preview, skeleton overlay, and start/stop serve counting UI.
+- Kept setup aligned with the reference app and copied only the live serve-detection path needed for the first milestone.
+
 ## 2026-06-06 10:52 — Agent conventions floor
 - Overlaid standard conventions onto existing repo: AGENTS.md (canonical), CLAUDE.md pointer, .gitignore, README, `.vault/` per Project Vault Standard.
 - Commit convention customized: one commit per coherent change; no AI co-author/attribution trailers.

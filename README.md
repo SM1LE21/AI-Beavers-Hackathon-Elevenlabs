@@ -1,6 +1,23 @@
-# AI-Beavers-Hackathon
+# AI Beavers Serve Detect
 
-On-device iOS tennis serve coach: detect a serve, detect one serve error, speak feedback via ElevenLabs TTS. Swift, on device — ElevenLabs is the only network hop. (AI Beavers Hackathon, 8h build.)
+Minimal native iOS app for the first hackathon milestone: open the app, start
+detecting, and count tennis serves on device.
+
+The detection stack is mono-repo local Swift source copied from the current
+serve-detection path. The only pod dependency is Google ML Kit pose detection;
+there are no private app pods, auth flows, uploads, review UI, or branding
+assets.
+
+## Run Locally
+
+```bash
+xcodegen generate
+pod install
+open AiBeaversServeDetect.xcworkspace
+```
+
+Then run the `AiBeaversServeDetect` scheme on a physical iPhone. Camera and pose
+runtime validation on simulator is not meaningful.
 
 ## Conventions
 
