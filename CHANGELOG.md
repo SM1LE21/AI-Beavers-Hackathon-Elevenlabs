@@ -8,6 +8,9 @@ Bullets are concrete and compact — no narration.
 
 ---
 
+## 2026-06-06 15:50 — Test voice button
+- Added a "Test voice" button under Start/Stop that fires one ElevenLabs line on demand, to verify the TTS chain without landing a serve.
+
 ## 2026-06-06 15:35 — Per-serve ElevenLabs voice feedback
 - Each detected serve triggers exactly one ElevenLabs TTS call: a fault line when the bent-toss-arm verdict fired, encouragement otherwise.
 - API key lives in gitignored `Secrets.swift` (template `Secrets.swift.example`); empty key disables voice but keeps detection.

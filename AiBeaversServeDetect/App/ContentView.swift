@@ -103,6 +103,16 @@ struct ContentView: View {
             }
             .disabled(viewModel.isTransitioning)
             .opacity(viewModel.isTransitioning ? 0.6 : 1.0)
+
+            Button(action: viewModel.testVoice) {
+                Text("Test voice")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 9)
+                    .background(.ultraThinMaterial, in: Capsule())
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
         }
     }
 

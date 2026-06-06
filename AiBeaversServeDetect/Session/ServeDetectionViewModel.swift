@@ -292,6 +292,10 @@ final class ServeDetectionViewModel: ObservableObject {
         voiceFeedback.speak(line)
     }
 
+    func testVoice() {
+        voiceFeedback.speak("Voice check. Keep your tossing arm straight all the way up.")
+    }
+
     private func invalidateSession() {
         sessionID += 1
         let invalidatedSessionID = sessionID
