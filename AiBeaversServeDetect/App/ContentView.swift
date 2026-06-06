@@ -16,12 +16,7 @@ struct ContentView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                if viewModel.isDetecting {
-                    HStack {
-                        Spacer()
-                        countPill
-                    }
-                }
+                topBar
                 Spacer(minLength: 0)
                 bottomControls
             }
@@ -33,6 +28,19 @@ struct ContentView: View {
         .background(Color.black)
         .onAppear { viewModel.onAppear() }
         .onDisappear { viewModel.onDisappear() }
+    }
+
+    private var topBar: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Text("Serve Detect")
+                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(.ultraThinMaterial, in: Capsule())
+            Spacer(minLength: 8)
+            countPill
+        }
     }
 
     private var countPill: some View {
