@@ -7,7 +7,7 @@ struct ContentView: View {
     private let warning = Color(red: 1.0, green: 0.49, blue: 0.42)
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottom) {
             CameraPreview(
                 session: viewModel.captureSession,
                 overlayFrame: viewModel.latestOverlayFrame,
@@ -16,30 +16,23 @@ struct ContentView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                topBar
+                if viewModel.isDetecting {
+                    HStack {
+                        Spacer()
+                        countPill
+                    }
+                }
                 Spacer(minLength: 0)
-                bottomBar
+                bottomControls
             }
             .padding(.horizontal, 16)
             .padding(.top, 6)
-            .padding(.bottom, 18)
+            .padding(.bottom, 16)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black)
         .onAppear { viewModel.onAppear() }
         .onDisappear { viewModel.onDisappear() }
-    }
-
-    private var topBar: some View {
-        HStack(alignment: .center, spacing: 10) {
-            Text("Serve Detect")
-                .font(.system(size: 15, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 7)
-                .background(.ultraThinMaterial, in: Capsule())
-            Spacer(minLength: 8)
-            countPill
-        }
     }
 
     private var countPill: some View {
@@ -58,9 +51,15 @@ struct ContentView: View {
         .overlay(Capsule().stroke(accent.opacity(0.55), lineWidth: 1))
     }
 
-    private var bottomBar: some View {
-        VStack(spacing: 12) {
-            statusLine
+    private var bottomControls: some View {
+        VStack(spacing: 10) {
+            if let errorMessage = viewModel.errorMessage {
+                Text(errorMessage)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(warning)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             Button(action: toggleDetection) {
                 Text(viewModel.isDetecting ? "Stop" : "Start detecting")
@@ -74,17 +73,6 @@ struct ContentView: View {
             .disabled(viewModel.isTransitioning)
             .opacity(viewModel.isTransitioning ? 0.6 : 1.0)
         }
-    }
-
-    private var statusLine: some View {
-        Text(viewModel.errorMessage ?? viewModel.statusMessage)
-            .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(viewModel.errorMessage == nil ? .white.opacity(0.82) : warning)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private func toggleDetection() {

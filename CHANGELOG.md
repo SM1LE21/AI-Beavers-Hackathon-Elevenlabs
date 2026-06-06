@@ -8,6 +8,10 @@ Bullets are concrete and compact — no narration.
 
 ---
 
+## 2026-06-06 12:40 — Strip preview HUD chrome
+- Removed the title and always-on status line; count pill now shows only while detecting, so the preview is just camera + Start button.
+- Forced full-height layout so the Start button pins to the bottom instead of floating mid-screen.
+
 ## 2026-06-06 12:10 — Declutter detection HUD
 - Rebuilt ContentView into a camera-forward HUD: floating count pill, light material chips, one slim status line, slim Start/Stop button.
 - Dropped the heavy full-screen gradient and verbose per-serve detail card; palette and pose skeleton overlay unchanged.
