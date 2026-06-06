@@ -27,6 +27,7 @@ final class ServeDetectionViewModel: ObservableObject {
         cameraPosition: .back
     )
     private let analysisWorker = ServeSessionAnalysisWorker()
+    private let voiceFeedback = VoiceFeedback()
 
     private var didConfigureCallbacks = false
     private var sessionID = 0
@@ -278,6 +279,15 @@ final class ServeDetectionViewModel: ObservableObject {
         )
         lastDetectionDelaySeconds = max(detectedAtSeconds - serve.impactTimeSeconds, 0)
         statusMessage = "Serve \(serveCount) detected."
+        let hasTossArmFault = serve.feedback.contains { $0.category == "toss_arm" }
+        speakServeFeedback(hasTossArmFault: hasTossArmFault)
+    }
+
+    private func speakServeFeedback(hasTossArmFault: Bool) {
+        let line = hasTossArmFault
+            ? "Heads up. Your tossing arm bent during the ball toss. Keep it straight all the way up."
+            : "Nice serve. Your tossing arm stayed straight through the toss."
+        voiceFeedback.speak(line)
     }
 
     private func invalidateSession() {

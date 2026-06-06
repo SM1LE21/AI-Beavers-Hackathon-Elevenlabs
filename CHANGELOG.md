@@ -8,6 +8,10 @@ Bullets are concrete and compact — no narration.
 
 ---
 
+## 2026-06-06 15:35 — Per-serve ElevenLabs voice feedback
+- Each detected serve triggers exactly one ElevenLabs TTS call: a fault line when the bent-toss-arm verdict fired, encouragement otherwise.
+- API key lives in gitignored `Secrets.swift` (template `Secrets.swift.example`); empty key disables voice but keeps detection.
+
 ## 2026-06-06 15:05 — Bent tossing-arm error detection
 - Added a trajectory-based toss-arm fault detector (`TossArmFault.swift`): flags an elbow-angle dip during the upward lift, with 2D-projection guards (flexion_rel, foreshortening, negative-slope gate).
 - Merged the verdict into every emitted serve's feedback in `ServeSessionProcessor`; chose this error class in ADR 0001 and resolved the open question.
