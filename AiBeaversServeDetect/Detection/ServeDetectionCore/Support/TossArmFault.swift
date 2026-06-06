@@ -3,25 +3,25 @@ import Foundation
 
 // Defaults; calibrate straightReference + minDip on real straight-vs-bent toss clips (read the logged dip per serve).
 private enum TossArmTuning {
-    static let preTrophySeconds = 2.0
-    static let postTrophySeconds = 1.0          // trophy anchors on the straight instant; the bend develops just after
-    static let minVisibility = 0.5
+    static let preTrophySeconds = 2.0           // the toss finishes shortly before contact (~trophy), so look back
+    static let postTrophySeconds = 1.0
+    static let minVisibility = 0.1              // the raised toss arm reads ~0.3-0.5 in ML Kit; only drop near-zero garbage
     static let foreshortenMinRatio = 0.7        // drop frames whose arm projects < 70% of this serve's typical span
     static let smoothingWindow = 3              // median-of-3 keeps a 2-3 frame bend at ~10 FPS
-    static let nearTopLiftFraction = 0.75       // judge the elbow only near the toss apex (excludes the arm-down descent)
-    static let minApexLiftRatio = 0.3           // wrist must clear the shoulders for a real toss top
+    static let minApexLiftRatio = 0.3           // toss wrist must clear the shoulders for a real toss top
+    static let riseToleranceRatio = 0.05        // ride through small noise while walking back to the toss start
     static let straightReferenceDegrees = 150.0 // the arm must reach ~straight before a bend counts as "straight -> bent"
-    static let minDipDegrees = 25.0             // straightest-near-top minus the most-bent angle that follows it
+    static let minDipDegrees = 20.0             // straightest-during-the-rise minus the most-bent angle that follows it
     static let minValidSamples = 3
-    static let minNearTopSamples = 3
+    static let minRiseSamples = 3
     static let trustedSampleCount = 5.0
-    static let minReportConfidence = 0.35
+    static let minReportConfidence = 0.2
 }
 
 struct TossArmFault {
     let bendDetected: Bool
-    let straightestAngle: Double      // peak elbow extension reached near the top of the toss
-    let minAngleAfterStraight: Double // most-bent elbow angle after that peak, still near the top
+    let straightestAngle: Double      // peak elbow extension reached during the toss rise
+    let minAngleAfterStraight: Double // most-bent elbow angle after that peak, up to the toss apex
     let dipDegrees: Double            // straightestAngle - minAngleAfterStraight
     let measurementConfidence: Double // 0..1; low => occluded / foreshortened / too few samples
 }
@@ -31,10 +31,9 @@ private struct TossArmSample {
     let theta: Double
     let lift: Double
     let armSpanRatio: Double
-    let confidence: Double
 }
 
-// Detects a toss arm that reaches near-straight then bends near the top of the toss (a dip in elbow angle as it rises).
+// Detects a toss arm that reaches near-straight then bends as it rises to the toss apex (a dip in elbow angle).
 func detectTossArmFault(
     in sequence: PoseSequence,
     trophyTimeSeconds: Double,
@@ -79,27 +78,29 @@ func detectTossArmFault(
     let theta = medianFilter(framed.map { $0.theta }, window: TossArmTuning.smoothingWindow)
     let lift = medianFilter(framed.map { $0.lift }, window: TossArmTuning.smoothingWindow)
 
-    // Restrict to the top of the toss (highest wrist) so the natural post-toss arm-down bend is excluded.
-    guard let apexLift = lift.max(), apexLift >= TossArmTuning.minApexLiftRatio else {
+    // Toss arc: apex = the highest the toss wrist gets; start = the bottom of the continuous rise into it.
+    guard let apexIndex = lift.indices.max(by: { lift[$0] < lift[$1] }), lift[apexIndex] >= TossArmTuning.minApexLiftRatio else {
         return unreliable
     }
-    let liftThreshold = TossArmTuning.nearTopLiftFraction * apexLift
-    let nearTop = framed.indices.filter { lift[$0] >= liftThreshold }
-    guard nearTop.count >= TossArmTuning.minNearTopSamples else {
+    var startIndex = apexIndex
+    while startIndex > 0, lift[startIndex - 1] <= lift[startIndex] + TossArmTuning.riseToleranceRatio {
+        startIndex -= 1
+    }
+    let riseCount = apexIndex - startIndex + 1
+    guard riseCount >= TossArmTuning.minRiseSamples else {
         return unreliable
     }
 
-    // Straightest elbow near the top, then the most-bent angle that follows it in time (straight -> bend).
-    let straightPosition = nearTop.indices.max(by: { theta[nearTop[$0]] < theta[nearTop[$1]] }) ?? nearTop.startIndex
-    let straightestAngle = theta[nearTop[straightPosition]]
-    let minAfterStraight = nearTop[straightPosition...].map { theta[$0] }.min() ?? straightestAngle
+    // Over the rise [start ... apex]: straightest elbow, then the most-bent angle that follows it in time.
+    let riseTheta = Array(theta[startIndex ... apexIndex])
+    let straightPosition = riseTheta.indices.max(by: { riseTheta[$0] < riseTheta[$1] }) ?? 0
+    let straightestAngle = riseTheta[straightPosition]
+    let minAfterStraight = riseTheta[straightPosition...].min() ?? straightestAngle
     let dip = straightestAngle - minAfterStraight
 
-    let nearTopConfidence = nearTop.map { framed[$0].confidence }
     let coverage = clamp(Double(framed.count) / Double(max(consideredCount, 1)))
-    let meanConf = nearTopConfidence.reduce(0.0, +) / Double(nearTopConfidence.count)
-    let sampleFactor = clamp(Double(nearTop.count) / TossArmTuning.trustedSampleCount)
-    let measurementConfidence = clamp(coverage * meanConf * sampleFactor)
+    let sampleFactor = clamp(Double(riseCount) / TossArmTuning.trustedSampleCount)
+    let measurementConfidence = clamp(coverage * sampleFactor)
 
     let bendDetected = straightestAngle >= TossArmTuning.straightReferenceDegrees
         && dip >= TossArmTuning.minDipDegrees
@@ -173,8 +174,7 @@ private func tossArmSample(frame: PoseFrame, handedness: Handedness) -> TossArmS
         return nil
     }
 
-    let confidence = min(shoulder.visibility, elbow.visibility, wrist.visibility)
-    guard confidence >= TossArmTuning.minVisibility else {
+    guard min(shoulder.visibility, elbow.visibility, wrist.visibility) >= TossArmTuning.minVisibility else {
         return nil
     }
 
@@ -193,8 +193,7 @@ private func tossArmSample(frame: PoseFrame, handedness: Handedness) -> TossArmS
         t: frame.timestampSeconds,
         theta: angleDegrees(s, e, w),
         lift: (shoulderCenter.y - w.y) / bodyScale,
-        armSpanRatio: (distance(s, e) + distance(e, w)) / bodyScale,
-        confidence: confidence
+        armSpanRatio: (distance(s, e) + distance(e, w)) / bodyScale
     )
 }
 
