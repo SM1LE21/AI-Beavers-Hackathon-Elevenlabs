@@ -230,6 +230,7 @@ final class ServeSessionProcessor {
                 )
                 return ingestResult(
                     for: flushedOutcome,
+                    sequence: sequence,
                     presenceReport: presenceReport,
                     sequenceFrameCount: sequence.frames.count,
                     segmentationEventCount: events.count,
@@ -395,7 +396,7 @@ final class ServeSessionProcessor {
             event: resolvedServe
         )
         return LiveServeIngestResult(
-            emittedServe: resolvedServe,
+            emittedServe: serveEventApplyingTossArmFault(resolvedServe, in: sequence),
             snapshot: snapshot,
             rejectedCandidates: rejectedCandidates,
             shadowVerdict: detectionMode.usesShadowReview ? shadowVerdict : nil,
@@ -673,6 +674,7 @@ final class ServeSessionProcessor {
 
     private func ingestResult(
         for primaryOutcome: ServeSessionPrimaryGateOutcome,
+        sequence: PoseSequence,
         presenceReport: LivePoseWindowPresenceReport,
         sequenceFrameCount: Int,
         segmentationEventCount: Int,
@@ -708,7 +710,7 @@ final class ServeSessionProcessor {
                 event: primaryEvent
             )
             return LiveServeIngestResult(
-                emittedServe: primaryEvent,
+                emittedServe: serveEventApplyingTossArmFault(primaryEvent, in: sequence),
                 snapshot: snapshot,
                 rejectedCandidates: rejectedCandidates,
                 shadowVerdict: nil,
