@@ -125,6 +125,9 @@ func serveEventApplyingTossArmFault(_ event: ServeEvent, in sequence: PoseSequen
         handedness: event.handedness,
         fault: fault
     )
+    if let dump = serveTossDumpJSON(event, in: sequence, fault: fault) {
+        LiveServeDiagnostics.logServeTossDump(dump)
+    }
     guard let item = tossArmFaultFeedback(fault) else {
         return event
     }

@@ -93,6 +93,10 @@ public enum LiveServeDiagnostics {
         )
     }
 
+    static func logServeTossDump(_ json: String) {
+        recordNotice("serve_toss_dump " + json)
+    }
+
     static func logSessionShadowContext(
         provider: LivePoseProviderKind,
         reason: String,

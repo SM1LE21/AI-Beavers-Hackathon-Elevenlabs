@@ -8,6 +8,10 @@ Bullets are concrete and compact — no narration.
 
 ---
 
+## 2026-06-06 16:31 — Dump toss-window joints per serve for LLM comparison
+- Emit `serve_toss_dump` (single-line JSON: serve meta, rule verdict, and toss-window joints nose/shoulders/elbows/wrists/hips as [x,y,visibility]) for every detected serve, to hand to an LLM and compare against the rule-based toss-arm verdict.
+- Built in `ServeTossDump.swift`; logged alongside `toss_arm_fault` in `serveEventApplyingTossArmFault`.
+
 ## 2026-06-06 16:06 — Fix toss-arm bend detection (never fired)
 - Reworked `TossArmFault` to flag a dip near the toss apex (arm reaches ~straight ≥150° then bends ≥25°), restricted to the top of the toss so the natural arm-down descent is excluded. The old start-relative flexion + trophy-capped window made the fault unreachable, so every serve got positive feedback.
 - Logs `toss_arm_fault` (straightest/min-after/dip/confidence) per serve for on-device threshold calibration.
