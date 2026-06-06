@@ -3,6 +3,9 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var viewModel = ServeDetectionViewModel()
 
+    private let accent = Color(red: 0.0, green: 0.84, blue: 0.58)
+    private let warning = Color(red: 1.0, green: 0.49, blue: 0.42)
+
     var body: some View {
         ZStack {
             CameraPreview(
@@ -12,94 +15,76 @@ struct ContentView: View {
             )
             .ignoresSafeArea()
 
-            LinearGradient(
-                colors: [.black.opacity(0.72), .clear, .black.opacity(0.86)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-
-            VStack(spacing: 18) {
-                topPanel
-                Spacer()
-                bottomPanel
+            VStack(spacing: 0) {
+                topBar
+                Spacer(minLength: 0)
+                bottomBar
             }
-            .padding(.horizontal, 18)
-            .padding(.top, 20)
-            .padding(.bottom, 22)
+            .padding(.horizontal, 16)
+            .padding(.top, 6)
+            .padding(.bottom, 18)
         }
         .background(Color.black)
         .onAppear { viewModel.onAppear() }
         .onDisappear { viewModel.onDisappear() }
     }
 
-    private var topPanel: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Serve Detect")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                Text(viewModel.statusMessage)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.78))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 2) {
-                Text("\(viewModel.serveCount)")
-                    .font(.system(size: 44, weight: .heavy, design: .rounded))
-                    .foregroundStyle(.white)
-                Text(viewModel.serveCount == 1 ? "serve" : "serves")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.7))
-            }
+    private var topBar: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Text("Serve Detect")
+                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(.ultraThinMaterial, in: Capsule())
+            Spacer(minLength: 8)
+            countPill
         }
     }
 
-    private var bottomPanel: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            if let errorMessage = viewModel.errorMessage {
-                Text(errorMessage)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color(red: 1.0, green: 0.49, blue: 0.42))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+    private var countPill: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text("\(viewModel.serveCount)")
+                .font(.system(size: 22, weight: .heavy, design: .rounded))
+                .foregroundStyle(.white)
+                .monospacedDigit()
+            Text(viewModel.serveCount == 1 ? "serve" : "serves")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.7))
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 7)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay(Capsule().stroke(accent.opacity(0.55), lineWidth: 1))
+    }
 
-            detectionReadout
+    private var bottomBar: some View {
+        VStack(spacing: 12) {
+            statusLine
 
             Button(action: toggleDetection) {
-                HStack {
-                    Spacer()
-                    Text(viewModel.isDetecting ? "Stop detecting" : "Start detecting")
-                        .font(.system(size: 17, weight: .bold))
-                    Spacer()
-                }
-                .frame(height: 54)
-                .background(viewModel.isDetecting ? Color.white : Color(red: 0.0, green: 0.84, blue: 0.58))
-                .foregroundStyle(viewModel.isDetecting ? .black : .black)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                Text(viewModel.isDetecting ? "Stop" : "Start detecting")
+                    .font(.system(size: 17, weight: .bold))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(viewModel.isDetecting ? Color.white.opacity(0.95) : accent)
+                    .foregroundStyle(.black)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .disabled(viewModel.isTransitioning)
-            .opacity(viewModel.isTransitioning ? 0.65 : 1.0)
+            .opacity(viewModel.isTransitioning ? 0.6 : 1.0)
         }
-        .padding(16)
-        .background(.black.opacity(0.54), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(.white.opacity(0.14), lineWidth: 1)
-        )
     }
 
-    private var detectionReadout: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(viewModel.lastDetectionTitle)
-                .font(.system(size: 17, weight: .bold))
-                .foregroundStyle(.white)
-            Text(viewModel.lastDetectionDetail)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white.opacity(0.72))
-                .fixedSize(horizontal: false, vertical: true)
-        }
+    private var statusLine: some View {
+        Text(viewModel.errorMessage ?? viewModel.statusMessage)
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(viewModel.errorMessage == nil ? .white.opacity(0.82) : warning)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private func toggleDetection() {
