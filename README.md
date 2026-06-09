@@ -1,5 +1,7 @@
 # 🦫 AI Beavers — Serve Detect
 
+> 🥈 **2nd of ~90 teams** at the [AI Beavers](https://ai-beavers.com/events/founder-hackathon) founders hackathon, Hamburg · June 2026. Built by the Founta team.
+
 **Real-time, on-device tennis serve coaching on an iPhone.** Point the camera at
 the baseline, serve, and the app detects each serve, flags a specific technique
 fault — a **bent tossing arm** — and speaks an instant coaching cue out loud. No
@@ -7,6 +9,18 @@ wearables, no cloud, no account for the core loop.
 
 A coach spots a bad ball toss in a glance; a player practicing alone can't. Serve
 Detect turns the phone into that second pair of eyes.
+
+## See it in action
+
+<p align="center">
+  <img src="docs/demo.gif" alt="Serve Detect tracking a serve with a live pose overlay" width="240">
+</p>
+
+▶️ **[Watch the full demo with sound](docs/demo.mp4)** — the spoken coaching cues are generated with ElevenLabs.
+
+| 🥈 2nd of ~90 teams | On stage |
+|---|---|
+| ![Founta with the 2nd-place board](docs/award.jpg) | ![Presenting Serve Detect](docs/stage.jpg) |
 
 ---
 
